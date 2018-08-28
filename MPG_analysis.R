@@ -46,3 +46,25 @@ summary(fit)
 # fit regression model with all regressors 
 fit_all <- lm(mpg ~ ., mtcars)
 summary(fit_all)
+
+# Get smaller dataframe with only the continuous variables
+mt_cont <- mtcars[, c(1, 3:7)]
+mt_cat <- mtcars[, c(2, 8:11)]
+
+ggpairs(mt_cont)
+ggcorr(mt_cont, label = T)
+
+# We will use a backwards elimination method to improve the model by eliminating
+# variables with high p-value
+fit2 <- lm(mpg ~ . - cyl, mtcars)
+fit3 <- lm(mpg ~ . - cyl - vs, mtcars)
+fit4 <- lm(mpg ~ . - cyl - vs - carb, mtcars)
+fit5 <- lm(mpg ~ . - cyl - vs - carb - gear, mtcars)
+fit6 <- lm(mpg ~ . - cyl - vs - carb - gear - drat, mtcars)
+fit7 <- lm(mpg ~ . - cyl - vs - carb - gear - drat - disp, mtcars)
+# all models have been improving adjusted R-squared over previous models, except
+# fit7
+fit8 <- lm(mpg ~ . - cyl - vs - carb - gear - drat - disp - hp, mtcars)
+# fit8 also got slightly worse, but the remaining regressors had coefficients 
+# that became more significant. 
+# some combo of am, wt, qseq, plus wt and hp produce the best fitting model
