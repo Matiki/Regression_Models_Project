@@ -30,9 +30,6 @@ str(mtcars)
 mtcars[, c(1, 3:7)] %>% 
         ggcorr(label = T)
 
-# Preliminary model fit: mpg ~ am
-fit <- lm(mpg ~ am, mtcars)
-
 # Plot mpg vs am
 ggplot(mtcars,
        aes(x = am,
@@ -43,7 +40,14 @@ ggplot(mtcars,
 mtcars %>% group_by(am) %>%
         summarize(mean = mean(mpg))
 
-# Take another look at the model/coefficients
+# Check to see if mpg is normally distributed
+ggplot(mtcars, aes(mpg)) +
+        geom_density()
+
+# Preliminary model fit: mpg ~ am
+fit <- lm(mpg ~ am, mtcars)
+
+# Take a look at the model/coefficients
 summary(fit)
 
 # At first glance it may seem manual transmission is associated with a 7.245
@@ -85,18 +89,86 @@ summary(fit8)
 # some combo of am, wt, qseq, plus disp and hp produce the best fitting model
 
 fit_wtqsec <- lm(mpg ~ am + wt + qsec, mtcars)
+summary(fit_wtqsec)
 fit_wtqsechp <- lm(mpg ~ am + wt + qsec + hp, mtcars)
+summary(fit_wtqsechp)
 fit_wtqsecdisp <- lm(mpg ~ am + wt + qsec + disp, mtcars)
+summary(fit_wtqsecdisp)
 fit_wtqsechpdisp <- lm(mpg ~ am + wt + qsec + hp + disp, mtcars)
+summary(fit_wtqsechpdisp)
 
 # we will do some ANOVA to compare the four models above
-anova(fit, fit_wtqsec, fit_wtqsechp, fit_wtqsechpdisp)
-anova(fit, fit_wtqsec, fit_wtqsecdisp, fit_wtqsechpdisp)
+fit_wt <- lm(mpg ~ am + wt, mtcars)
+anova(fit, fit_wt, fit_wtqsec, fit_wtqsechp, fit_wtqsechpdisp)
+anova(fit, fit_wt, fit_wtqsec, fit_wtqsecdisp, fit_wtqsechpdisp)
 
 # look at variance inflation factor
+sqrt(vif(fit_wtqsec))
+sqrt(vif(fit_wtqsechp))
+sqrt(vif(fit_wtqsecdisp))
 sqrt(vif(fit_wtqsechpdisp))
 
+# ANOVA seems to indicate there is not a statistically significant difference 
+# between fit_wtqsec and other models which include hp and disp as regressors
+# Therefore we choose to include only am, wt, and qsec in our regression model
+fit_final <- lm(mpg ~ am + wt + qsec, mtcars)
+summary(fit_final)
 
 ##############################################################
 # 3) Diagnostics
 ##############################################################
+
+# We'll do some diagnostics plots looking for any patterns with GGplot2
+# Residuals vs fitted values
+ggplot(fit_final,
+       aes(x = .fitted, y = .resid)) +
+        geom_point() +
+        geom_smooth() + 
+        geom_hline(yintercept = 0,
+                   col = "red",
+                   linetype = "dashed") +
+        labs(title = "Residuals vs Fitted Values",
+             x = "Fitted Values",
+             y = "Residuals")
+
+# Normal QQ plot
+ggplot(fit_final) +
+        geom_qq(aes(sample = .stdresid)) +
+        geom_abline(intercept = 0, slope = 1, 
+                    linetype = "dashed", col = "red") +
+        labs(title = "Normal Q-Q Plot",
+             x = "Theoretical Quantiles",
+             y = "Standardized Residuals") 
+
+# Scale location plot
+ggplot(fit_final,
+       aes(y = sqrt(abs(.stdresid)),
+           x = .fitted)) + 
+        geom_point() +
+        geom_smooth() +
+        labs(title = "Scale Location Plot",
+             x = "Fitted Values",
+             y = expression(sqrt("|Standardized residuals|")))
+
+
+# same plots using base R
+# par(mfrow = c(3, 2))
+# plot(fit_final) 
+plot(fit_final, which = 4)
+plot(fit_final, which = 6)
+
+
+##############################################################
+# 4) Inference
+##############################################################
+summary(fit_final)$coef
+confint(fit_final)
+
+# We expect on average, cars with manual transmission to get 2.94 mpg more than
+# cars with automatic transmission, while holding other regressors fixed.
+# Our estimate is statistically significant for alpha = 0.05, and has a 
+# p-value of 0.0467. 
+# We can construct a 95% confidence interval and see that we are 95% confident 
+# that our estimate of the increase in mpg in manual transmission cars lies 
+# between 0.0457 and 5.823.
+# Therefore we conclude that manual transmission is associated with better mpg
