@@ -1,0 +1,38 @@
+---
+title: "Analyzing the Relationship Between MPG and Transmission"
+author: "Matiki"
+date: "August 29, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Executive Summary
+We are going to investigate MPG for various vehicles using the mtcars dataset. 
+We would like to know how the variables affect MPG, and in particular, we want 
+to investigate the relationship between MPG and transmission. We are tasked with
+answering the following questions:
+
+1) Is manual or automatic transmission better for MPG?
+2) Can we quantify the MPG difference between automatic and manual transmission?
+
+To answer these questions we will use both simple linear regression and also a 
+multivariate linear regression to model the relationship. Since there are 
+several variables we could include in many different linear models we could fit,
+we will use a backwards elimination method to attempt to find the best fitting 
+linear regression model for our given data.
+
+## Exploratory analysis
+
+
+## Model Selection
+
+
+## Diagnostics
+
+
+## Conclusion
