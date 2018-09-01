@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(ggplot2)
 library(dplyr)
 library(GGally)
-library(car)
+library(gridExtra)
 ```
 
 ## Executive Summary
@@ -126,7 +126,7 @@ statistically significant. We'll perform a two group T-test and we will choose
 our alpha to be 0.05.
 
 ```{r}
-# Welch Two Sample T test
+# Welch Two Sample T-test
 t.test(mpg ~ am, data= mtcars, 
        var.equal = FALSE, paired=FALSE, conf.level = .95)
 ```
@@ -135,9 +135,143 @@ So it seems manual transmission is associated with an increase in mpg of 7.25,
 and this is significant with a p-value of 0.001374.
 
 ## Model Selection
+We'll start by looking at the simple linear model regressing **mpg** on **am** alone
 
+```{r}
+# Preliminary model fit: mpg ~ am
+fit1 <- lm(mpg ~ am, mtcars)
+
+# Take a look at the model/coefficients
+summary(fit1)$coef
+```
+
+This confirms our previous analysis, here the coefficient labeled 'intercept' 
+represents the mean mpg for automatic transmission cars, and the coefficient 
+'am1' represents the change in mean for cars with manual transmission. It appears
+to be an increase of about 7.25, like we saw before. The p-value here is different
+because by default, R's 'lm' function uses a test assuming equal variance in the
+two groups.
+
+Now let's look at the multivariate regression model using all the variables.
+```{r}
+# fit regression model with all regressors
+fit_all <- lm(mpg ~ ., mtcars)
+summary(fit_all)
+```
+
+The change in mpg no longer appears to be significant, but our model is likely 
+not the best considering how much correlation we saw among the regressors earlier.
+We will use a step-wise backwards elimination method to remove regressors one-by-one
+until we have something that better models our data. We'll look at all the 
+variable's coefficients and choose the one with the highest p-value to eliminate
+from our next model. We will repeat this process until all our coefficients are 
+significant.
+
+```{r}
+fit2 <- lm(mpg ~ . - cyl, mtcars)
+summary(fit2)
+
+fit3 <- lm(mpg ~ . - cyl - vs, mtcars)
+summary(fit3)
+
+fit4 <- lm(mpg ~ . - cyl - vs - carb, mtcars)
+summary(fit4)
+
+fit5 <- lm(mpg ~ . - cyl - vs - carb - gear, mtcars)
+summary(fit5)
+
+fit6 <- lm(mpg ~ . - cyl - vs - carb - gear - drat, mtcars)
+summary(fit6)
+
+fit7 <- lm(mpg ~ . - cyl - vs - carb - gear - drat - disp, mtcars)
+summary(fit7)
+
+fit8 <- lm(mpg ~ . - cyl - vs - carb - gear - drat - disp - hp, mtcars)
+summary(fit8)
+```
+
+We can see that the backwards elmination method produces a model which regresses
+**mpg** on **am**, **wt**, and **qsec**. But it seems that the R^2 value actually
+decreased after in our final two models, so let's do some more analysis to make 
+sure we have good model fit.
+
+```{r}
+fit_wtqsec <- lm(mpg ~ am + wt + qsec, mtcars)
+
+fit_wtqsechp <- lm(mpg ~ am + wt + qsec + hp, mtcars)
+
+fit_wtqsechpdisp <- lm(mpg ~ am + wt + qsec + hp + disp, mtcars)
+
+anova(fit_wtqsec, fit_wtqsechp, fit_wtqsechpdisp)
+```
+
+This shows that there is not a statistically significant improvement in the model
+if we include **hp** and **disp** as regressors. Therefore we will choose to 
+include only **am**, **wt**, and **qsec** in our final model.
 
 ## Diagnostics
+Now we will run some diagnostics to see how well our model fits the data. We'll
+plot the residuals agains the fitted values, a Normal Q-Q plot, and a 
+scale-location plot.
 
+```{r}
+fit_final <- lm(mpg ~ am + wt + qsec, mtcars)
+
+# Residuals vs fitted values
+g1 <- ggplot(fit_final,
+       aes(x = .fitted, y = .resid)) +
+        geom_point() +
+        geom_smooth() + 
+        geom_hline(yintercept = 0,
+                   col = "red",
+                   linetype = "dashed") +
+        labs(title = "Residuals vs Fitted Values",
+             x = "Fitted Values",
+             y = "Residuals")
+
+# Normal QQ plot
+g2 <- ggplot(fit_final) +
+        geom_qq(aes(sample = .stdresid)) +
+        geom_abline(intercept = 0, slope = 1, 
+                    linetype = "dashed", col = "red") +
+        labs(title = "Normal Q-Q Plot",
+             x = "Theoretical Quantiles",
+             y = "Standardized Residuals") 
+
+# Scale location plot
+g3 <- ggplot(fit_final,
+       aes(y = sqrt(abs(.stdresid)),
+           x = .fitted)) + 
+        geom_point() +
+        geom_smooth() +
+        labs(title = "Scale Location Plot",
+             x = "Fitted Values",
+             y = expression(sqrt("|Standardized residuals|")))
+
+grid.arrange(g1, g2, g3, ncol = 3)
+```
+
+We don't notice any particular pattern among these plots that might indicate a 
+linear regression model was a poor choice. We do notice that the data might not
+be perfectly normally distributed, as we saw earlier in our exploratory analysis,
+which might throw off our results. However we are still reasonably close so we 
+can accept some error.
 
 ## Conclusion
+
+```{r}
+summary(fit_final)
+confint(fit_final)
+```
+
+Based on our multivariable linear regression model, we expect on average, cars 
+with manual transmission to get 2.94 mpg more than cars with automatic transmission, 
+while holding other regressors fixed. Our estimate is statistically significant 
+for alpha = 0.05, and has a p-value of 0.0467. 
+
+We can construct a 95% confidence interval and see that we are 95% confident 
+that our estimate of the increase in mpg in manual transmission cars lies 
+between 0.0457 and 5.823.
+
+Therefore we conclude that manual transmission is associated with better mpg than
+automatic transmission.
