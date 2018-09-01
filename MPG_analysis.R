@@ -54,6 +54,10 @@ ggplot(mtcars, aes(mpg)) +
                    color = "blue",
                    linetype = "dashed") 
 
+# Welch Two Sample T test
+t.test(mpg ~ am, data= mtcars, 
+       var.equal = FALSE, paired=FALSE, conf.level = .95)
+
 # Preliminary model fit: mpg ~ am
 fit <- lm(mpg ~ am, mtcars)
 
