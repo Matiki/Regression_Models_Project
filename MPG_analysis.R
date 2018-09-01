@@ -42,7 +42,17 @@ mtcars %>% group_by(am) %>%
 
 # Check to see if mpg is normally distributed
 ggplot(mtcars, aes(mpg)) +
-        geom_density()
+        geom_density() +
+        xlim(0, 50) + 
+        geom_vline(xintercept = mean(mtcars$mpg),
+                   color = "red",
+                   linetype = "dashed") +
+        geom_vline(xintercept = mean(mtcars$mpg) - 2 * sd(mtcars$mpg),
+                   color = "blue",
+                   linetype = "dashed") +
+        geom_vline(xintercept = mean(mtcars$mpg) + 2 * sd(mtcars$mpg),
+                   color = "blue",
+                   linetype = "dashed") 
 
 # Preliminary model fit: mpg ~ am
 fit <- lm(mpg ~ am, mtcars)
