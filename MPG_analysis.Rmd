@@ -269,6 +269,8 @@ with manual transmission to get 2.94 mpg more than cars with automatic transmiss
 while holding other regressors fixed. Our estimate is statistically significant 
 for alpha = 0.05, and has a p-value of 0.0467. 
 
+We had an adjusted R-squared value of 0.8336, indicating a good model fit.
+
 We can construct a 95% confidence interval and see that we are 95% confident 
 that our estimate of the increase in mpg in manual transmission cars lies 
 between 0.0457 and 5.823.
